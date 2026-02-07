@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../components/colors.dart';
 import '../components/glass_card.dart';
@@ -17,6 +18,7 @@ class _CameraScreenState extends State<CameraScreen> {
   CameraController? _controller;
   bool _isRecording = false;
   bool _isUploading = false;
+  String? _error;
 
   @override
   void initState() {
@@ -27,17 +29,32 @@ class _CameraScreenState extends State<CameraScreen> {
   Future<void> _initCamera() async {
     try {
       final cameras = await availableCameras();
-      if (cameras.isEmpty) return;
+      if (cameras.isEmpty) {
+        setState(() => _error = "No cameras found.");
+        return;
+      }
       
+      // On Web, sometimes the first camera isn't the user-facing one
+      // We'll try to find a front camera or just take the first one
+      CameraDescription selectedCamera = cameras.first;
+      for (var camera in cameras) {
+        if (camera.lensDirection == CameraLensDirection.front) {
+          selectedCamera = camera;
+          break;
+        }
+      }
+
       _controller = CameraController(
-        cameras[0], 
-        ResolutionPreset.high,
+        selectedCamera, 
+        ResolutionPreset.max, // Higher resolution for better AI analysis
         enableAudio: true,
+        imageFormatGroup: kIsWeb ? null : ImageFormatGroup.jpeg,
       );
       
       await _controller!.initialize();
       if (mounted) setState(() {});
     } catch (e) {
+      setState(() => _error = "Camera Error: $e");
       debugPrint("Camera Error: $e");
     }
   }
@@ -46,7 +63,6 @@ class _CameraScreenState extends State<CameraScreen> {
     if (_controller == null || !_controller!.value.isInitialized) return;
 
     if (_isRecording) {
-      // STOP RECORDING
       final XFile? videoFile = await _controller!.stopVideoRecording();
       setState(() {
         _isRecording = false;
@@ -54,10 +70,8 @@ class _CameraScreenState extends State<CameraScreen> {
       });
 
       if (videoFile != null) {
-        await _uploadVideo(videoFile.path);
+        await _uploadVideo(videoFile);
         
-        // MOCK DATA for Hackathon Demo
-        // In production, this would wait for a Firestore update from the AI Backend
         final mockReport = {
           "score": 1,
           "hz": 4.8,
@@ -72,7 +86,6 @@ class _CameraScreenState extends State<CameraScreen> {
         }
       }
     } else {
-      // START RECORDING
       await _controller!.startVideoRecording();
       setState(() {
         _isRecording = true;
@@ -80,13 +93,19 @@ class _CameraScreenState extends State<CameraScreen> {
     }
   }
 
-  Future<void> _uploadVideo(String path) async {
+  Future<void> _uploadVideo(XFile xFile) async {
     try {
-      final file = File(path);
       final fileName = "screenings/${DateTime.now().millisecondsSinceEpoch}.mp4";
       final storageRef = FirebaseStorage.instance.ref().child(fileName);
       
-      await storageRef.putFile(file);
+      if (kIsWeb) {
+        // Web requires bytes for upload
+        final bytes = await xFile.readAsBytes();
+        await storageRef.putData(bytes, SettableMetadata(contentType: 'video/mp4'));
+      } else {
+        final file = File(xFile.path);
+        await storageRef.putFile(file);
+      }
       debugPrint("Upload complete: $fileName");
     } catch (e) {
       debugPrint("Upload error: $e");
@@ -101,6 +120,27 @@ class _CameraScreenState extends State<CameraScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_error != null) {
+      return Scaffold(
+        backgroundColor: ZahraColors.deepSpace,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.red, size: 60),
+              const SizedBox(height: 16),
+              Text(_error!, style: const TextStyle(color: Colors.white)),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Go Back"),
+              )
+            ],
+          ),
+        ),
+      );
+    }
+
     if (_controller == null || !_controller!.value.isInitialized) {
       return const Scaffold(
         backgroundColor: ZahraColors.deepSpace,
@@ -108,14 +148,24 @@ class _CameraScreenState extends State<CameraScreen> {
       );
     }
 
+    // Calculate scaling to fill the screen
+    final size = MediaQuery.of(context).size;
+    var scale = size.aspectRatio * _controller!.value.aspectRatio;
+    if (scale < 1) scale = 1 / scale;
+
     return Scaffold(
       backgroundColor: ZahraColors.deepSpace,
       body: Stack(
         children: [
-          Center(
-            child: CameraPreview(_controller!),
+          // Full Screen Camera Preview
+          Transform.scale(
+            scale: scale,
+            child: Center(
+              child: CameraPreview(_controller!),
+            ),
           ),
           
+          // Guidance Overlay
           Positioned(
             top: 60,
             left: 24,
