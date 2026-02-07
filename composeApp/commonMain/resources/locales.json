@@ -1,0 +1,22 @@
+{
+  "en": {
+    "app_name": "Zahra MedSense",
+    "dashboard_title": "Neurological Screening",
+    "parkinson_test": "Parkinson's (Finger Tapping)",
+    "stroke_test": "Stroke (Speech Analysis)",
+    "start_screening": "Start New Screening",
+    "recording_guide": "Keep your hand visible within the frame and tap as fast as you can.",
+    "analysis_progress": "Gemini 3 is analyzing your micro-movements...",
+    "report_summary": "Screening Report"
+  },
+  "id": {
+    "app_name": "Zahra MedSense",
+    "dashboard_title": "Skrining Saraf",
+    "parkinson_test": "Parkinson (Ketukan Jari)",
+    "stroke_test": "Stroke (Analisis Bicara)",
+    "start_screening": "Mulai Skrining Baru",
+    "recording_guide": "Pastikan tangan terlihat dalam bingkai dan ketuk secepat mungkin.",
+    "analysis_progress": "Gemini 3 sedang menganalisis gerakan mikro Anda...",
+    "report_summary": "Laporan Skrining"
+  }
+}

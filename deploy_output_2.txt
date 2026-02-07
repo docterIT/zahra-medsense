@@ -1,0 +1,15 @@
+
+[1m[37m===[39m Deploying to 'zahra-medsense'...[22m
+
+[36m[1mi [22m[39m deploying [1mfunctions[22m
+Running command: npm --prefix functions run build
+
+> zahra-medsense-functions@1.0.0 build
+> tsc
+
+src/gemini.ts(9,11): error TS6133: 'model' is declared but its value is never read.
+src/gemini.ts(11,11): error TS6133: 'prompt' is declared but its value is never read.
+src/gemini.ts(44,11): error TS6133: 'model' is declared but its value is never read.
+src/gemini.ts(46,11): error TS6133: 'prompt' is declared but its value is never read.
+
+[1m[31mError:[39m[22m functions predeploy error: Command terminated with non-zero exit code 2

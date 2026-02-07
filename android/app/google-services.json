@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1087120768198",
+    "project_id": "zahra-medsense",
+    "storage_bucket": "zahra-medsense.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1087120768198:android:60f87706307fd12443abc7",
+        "android_client_info": {
+          "package_name": "com.example.zahra_medsense"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCBDPje2evBAi1Ki3PcKl5tRuqyR9OSqiY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

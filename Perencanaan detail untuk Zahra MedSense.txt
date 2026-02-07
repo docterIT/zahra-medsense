@@ -1,0 +1,57 @@
+Perencanaan detail untuk Zahra MedSense (Z.A.H.R.A)
+
+1. Visi dan Identitas Produk
+Zahra MedSense bertujuan mendemokratisasi akses skrining neurologis. Nama Z.A.H.R.A (Zenith AI for Health & Recovery Analysis) memberikan kesan teknologi puncak yang tetap humanis.
+Tagline: "Neurological screening at your fingertips."
+Target Pengguna: Pasien lanjut usia, individu dengan risiko genetik Parkinson/Stroke, dan paramedis.
+Bahasa Interface: Full support untuk Inggris (utama), Indonesia, dan Arab
+Bahasa penggunaan Aplikasi: Semua bahasa dengan menggunakan multi modal gemini (termasuk deteksi dialek lokal untuk analisis bicara).
+
+2. Fitur Utama (The Triple-Check System)
+Zahra MedSense tidak hanya melihat, tapi juga mendengar dan memahami konteks medis secara mendalam.
+
+A. Vision: Kinematic Biomarker Tracking
+Menggunakan kamera ponsel untuk mendeteksi gejala motorik halus:
+- Micro-tremor Analysis: Deteksi getaran frekuensi tinggi pada jari (4-6 Hz) yang sulit dilihat mata biasa.
+- Facial Symmetry Scoring: Deteksi dini Bell's Palsy atau "drooping" wajah sebagai indikator stroke menggunakan koordinasi landmark wajah.
+- Bradykinesia Detection: Mengukur perlambatan gerakan saat pasien melakukan tugas repetitif (seperti finger tapping).
+
+B. Acoustic: Phonetic & Prosody Analysis
+Menganalisis sampel suara untuk mendeteksi Dysarthria (gangguan bicara):
+- Vocal Tremor & Jitter: Deteksi ketidakstabilan pita suara.
+- Speech Monotony: Parkinson sering menyebabkan suara menjadi datar tanpa intonasi. Gemini 3 menganalisis ritme (prosodi) bicara dalam berbagai bahasa.
+
+C. Reasoning: Longitudinal Medical Reporting
+Memanfaatkan Long Context Window Gemini 3:
+- Historical Comparison: Membandingkan video hari ini dengan rekaman 1 atau beberapa bulan yang lalu untuk melihat degradasi atau perbaikan fungsi motorik.
+- Clinical Alignment: Mencocokkan temuan visual dengan skala UPDRS (Unified Parkinson's Disease Rating Scale) secara otomatis.
+
+3. Arsitektur Teknis & Tech Stack
+Komponen		Teknologi					Peran
+Frontend		Flutter (Multi-platform)	Satu basis kode untuk Android, iOS, dan Web.
+AI Engine		Gemini 3 (API)				Analisis multimodal (Video + Audio + Text).
+Backend			Firebase (Cloud Functions)	Logika serverless dan manajemen API.
+Database		Firestore & Cloud Storage	Penyimpanan metadata medis dan file video terenkripsi.
+UI Motion		Google Antigravity			Digunakan untuk transisi UI yang sangat halus dan responsif saat proses perekaman.
+Security		Cloud Healthcare API		Memastikan kepatuhan terhadap standar HIPAA/GDPR.
+
+4. Alur Kerja Aplikasi (User Journey)
+	a. Onboarding: Pengguna memilih bahasa (Inggris/Indonesia/Arab).
+	b. Guided Assessment: Asisten virtual (Zahra) memberikan instruksi suara: "Tolong ketukkan jari telunjuk dan jempol Anda di depan kamera selama 15 detik."
+	c. Real-time Capture: Video direkam dan dikirim ke Firebase Storage dalam potongan kecil (streaming).
+	d. Multimodal Processing:
+		- Gemini 3 menerima video dan audio secara simultan.
+		- Prompting Internal: "Analyze this video for resting tremor and this audio for slurred speech. Compare with the patient's baseline from Jan 2026. Provide a risk score (0-10)."
+	e. Insight Delivery: Pengguna menerima laporan sederhana (Hijau/Kuning/Merah) dengan saran untuk segera berkonsultasi ke dokter jika diperlukan.
+
+5. Strategi Kemenangan Hackathon (The "Gemini 3" Edge)
+Anda harus menonjolkan fitur yang hanya bisa dilakukan oleh Gemini 3, bukan AI model lama:
+- Multilingual Medical Nuance: Tunjukkan bagaimana AI bisa membedakan antara "aksen bicara" seseorang dengan "gangguan bicara medis" dalam berbagai bahasa.
+- Complex Reasoning: Jangan hanya mendeteksi tremor. Berikan analisis: "Tremor terdeteksi pada tangan kanan, namun karena pasien baru saja meminum kopi (berdasarkan log chat sebelumnya), sistem menyarankan tes ulang dalam 2 jam."
+- Zero-Delay Interaction: Manfaatkan kecepatan pemrosesan Gemini 3 untuk memberikan feedback instan saat video masih direkam.
+
+6. Tantangan & Solusi
+Privasi: Gunakan On-device Processing untuk tugas-tugas ringan, dan gunakan enkripsi end-to-end saat mengirim data ke Google Cloud.
+Pencahayaan: Implementasikan filter pra-pemrosesan menggunakan MediaPipe sebelum video dianalisis oleh Gemini untuk menormalisasi cahaya.
+Aksesibilitas: Karena targetnya mungkin lansia, UI harus memiliki tombol besar, kontras tinggi, dan navigasi berbasis suara penuh.
+
