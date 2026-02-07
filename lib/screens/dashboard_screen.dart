@@ -291,7 +291,7 @@ class DashboardScreen extends StatelessWidget {
       height: 90,
       decoration: const BoxDecoration(
         color: ZahraColors.deepSpace,
-        border: Border(top: BorderSide(color: Colors.white05)),
+        border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
