@@ -27,16 +27,16 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   Future<void> _initCamera() async {
+    setState(() => _error = null);
     try {
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
-        setState(() => _error = "No cameras found.");
+        setState(() => _error = "No cameras detected. Please ensure your camera is connected and permissions are granted.");
         return;
       }
       
-      // On Web, sometimes the first camera isn't the user-facing one
-      // We'll try to find a front camera or just take the first one
       CameraDescription selectedCamera = cameras.first;
+      // Preference: Front camera for selfies/screening
       for (var camera in cameras) {
         if (camera.lensDirection == CameraLensDirection.front) {
           selectedCamera = camera;
@@ -46,16 +46,21 @@ class _CameraScreenState extends State<CameraScreen> {
 
       _controller = CameraController(
         selectedCamera, 
-        ResolutionPreset.max, // Higher resolution for better AI analysis
+        ResolutionPreset.high,
         enableAudio: true,
         imageFormatGroup: kIsWeb ? null : ImageFormatGroup.jpeg,
       );
       
+      if (kIsWeb) await Future.delayed(const Duration(milliseconds: 300));
+      
       await _controller!.initialize();
       if (mounted) setState(() {});
     } catch (e) {
-      setState(() => _error = "Camera Error: $e");
-      debugPrint("Camera Error: $e");
+      String errorMessage = "Camera Error: $e";
+      if (e.toString().contains("cameraNotReadable")) {
+        errorMessage = "Camera is busy or not responding. Please close other apps using the camera (Zoom, Teams, Chrome Tab) and click Refresh.";
+      }
+      setState(() => _error = errorMessage);
     }
   }
 
@@ -75,7 +80,7 @@ class _CameraScreenState extends State<CameraScreen> {
         final mockReport = {
           "score": 1,
           "hz": 4.8,
-          "summary": "AI detected slight tremor decrement typical of early-stage Parkinson's. Higher precision analysis complete."
+          "summary": "AI detected slight tremor decrement typical of early-stage Parkinson's. Amplitude reduction identified in cycles 7-9."
         };
 
         if (mounted) {
@@ -99,14 +104,12 @@ class _CameraScreenState extends State<CameraScreen> {
       final storageRef = FirebaseStorage.instance.ref().child(fileName);
       
       if (kIsWeb) {
-        // Web requires bytes for upload
         final bytes = await xFile.readAsBytes();
         await storageRef.putData(bytes, SettableMetadata(contentType: 'video/mp4'));
       } else {
         final file = File(xFile.path);
         await storageRef.putFile(file);
       }
-      debugPrint("Upload complete: $fileName");
     } catch (e) {
       debugPrint("Upload error: $e");
     }
@@ -122,20 +125,37 @@ class _CameraScreenState extends State<CameraScreen> {
   Widget build(BuildContext context) {
     if (_error != null) {
       return Scaffold(
-        backgroundColor: ZahraColors.deepSpace,
+        backgroundColor: Colors.black,
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, color: Colors.red, size: 60),
-              const SizedBox(height: 16),
-              Text(_error!, style: const TextStyle(color: Colors.white)),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Go Back"),
-              )
-            ],
+          child: Padding(
+            padding: const EdgeInsets.all(40),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.videocam_off_rounded, color: Colors.redAccent, size: 80),
+                const SizedBox(height: 24),
+                Text(
+                  _error!,
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton.icon(
+                  onPressed: _initCamera,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text("REFRESH CAMERA"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: ZahraColors.electricBlue,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Go Back", style: TextStyle(color: Colors.white54)),
+                )
+              ],
+            ),
           ),
         ),
       );
@@ -143,53 +163,71 @@ class _CameraScreenState extends State<CameraScreen> {
 
     if (_controller == null || !_controller!.value.isInitialized) {
       return const Scaffold(
-        backgroundColor: ZahraColors.deepSpace,
+        backgroundColor: Colors.black,
         body: Center(child: CircularProgressIndicator(color: ZahraColors.electricBlue)),
       );
     }
 
-    // Calculate scaling to fill the screen
-    final size = MediaQuery.of(context).size;
-    var scale = size.aspectRatio * _controller!.value.aspectRatio;
-    if (scale < 1) scale = 1 / scale;
-
     return Scaffold(
-      backgroundColor: ZahraColors.deepSpace,
+      backgroundColor: Colors.black,
       body: Stack(
+        fit: StackFit.expand,
         children: [
-          // Full Screen Camera Preview
-          Transform.scale(
-            scale: scale,
-            child: Center(
+          // TRULY FULL SCREEN CAMERA
+          Center(
+            child: AspectRatio(
+              aspectRatio: 1 / _controller!.value.aspectRatio,
               child: CameraPreview(_controller!),
             ),
           ),
           
-          // Guidance Overlay
+          // Gradient Overlays for premium look
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.4),
+                    Colors.transparent,
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.6),
+                  ],
+                  stops: const [0.0, 0.2, 0.7, 1.0],
+                ),
+              ),
+            ),
+          ),
+
+          // Instruction Overlay
           Positioned(
             top: 60,
             left: 24,
             right: 24,
-            child: GlassCard(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  const Icon(Icons.info_outline, color: ZahraColors.electricBlue),
-                  const SizedBox(height: 8),
-                  Text(
-                    _isUploading ? "UPLOADING TO AI ENGINE..." : "Position your hand clearly in the frame.",
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 300),
+              opacity: _isRecording ? 0.2 : 1.0,
+              child: GlassCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    const Icon(Icons.sensors_rounded, color: ZahraColors.electricBlue, size: 28),
+                    const SizedBox(height: 12),
+                    Text(
+                      _isUploading ? "AI PROCESSING..." : "Position Hand",
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  if (!_isUploading)
-                    const Text(
-                      "Perform 10 rapid finger taps (thumb to index).",
-                      style: TextStyle(color: ZahraColors.textSecondary, fontSize: 12),
+                    const SizedBox(height: 4),
+                    Text(
+                      _isUploading 
+                          ? "Analyzing kinematic biomarkers" 
+                          : "Perform rapid finger taps (10x)",
+                      style: const TextStyle(color: ZahraColors.textSecondary, fontSize: 13),
                       textAlign: TextAlign.center,
                     ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -197,52 +235,58 @@ class _CameraScreenState extends State<CameraScreen> {
           if (_isRecording || _isUploading)
             Center(
               child: Container(
-                width: 250,
-                height: 250,
+                width: 280,
+                height: 280,
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: _isUploading ? ZahraColors.healingTeal : ZahraColors.electricBlue.withOpacity(0.5), 
-                    width: 2
+                    color: _isUploading ? ZahraColors.healingTeal : Colors.white24, 
+                    width: 1
                   ),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(40),
                 ),
-                child: _isUploading ? const Center(child: CircularProgressIndicator()) : null,
+                child: _isUploading 
+                  ? const Center(child: CircularProgressIndicator(color: ZahraColors.healingTeal)) 
+                  : Stack(
+                    children: [
+                      Positioned(
+                        top: 10, right: 10,
+                        child: Container(
+                          width: 12, height: 12,
+                          decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                        ),
+                      ),
+                    ],
+                  ),
               ),
             ),
           
           if (!_isUploading)
             Positioned(
-              bottom: 50,
-              left: 0,
-              right: 0,
-              child: Column(
+              bottom: 60,
+              left: 40,
+              right: 40,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (_isRecording)
-                    const Text(
-                      "AI ANALYZING MOTION...",
-                      style: TextStyle(color: ZahraColors.healingTeal, fontWeight: FontWeight.bold, letterSpacing: 1.5),
-                    ),
-                  const SizedBox(height: 20),
                   GestureDetector(
                     onTap: _toggleRecording,
                     child: Container(
-                      padding: const EdgeInsets.all(5),
+                      height: 80,
+                      width: 80,
+                      padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 4),
+                        border: Border.all(color: Colors.white, width: 3),
                       ),
                       child: Container(
-                        width: 70,
-                        height: 70,
                         decoration: BoxDecoration(
-                          shape: _isRecording ? BoxShape.rectangle : BoxShape.circle,
-                          borderRadius: _isRecording ? BorderRadius.circular(12) : null,
-                          color: _isRecording ? Colors.red : ZahraColors.electricBlue,
+                          color: _isRecording ? Colors.red : Colors.white,
+                          borderRadius: BorderRadius.circular(_isRecording ? 12 : 40),
                         ),
                         child: Icon(
-                          _isRecording ? Icons.stop : Icons.videocam,
-                          color: Colors.white,
-                          size: 32,
+                          _isRecording ? Icons.stop_rounded : Icons.videocam_rounded,
+                          color: _isRecording ? Colors.white : Colors.black,
+                          size: 36,
                         ),
                       ),
                     ),
@@ -252,11 +296,13 @@ class _CameraScreenState extends State<CameraScreen> {
             ),
           
           Positioned(
-            top: 60,
+            top: 20,
             left: 20,
-            child: IconButton(
-              icon: const Icon(Icons.close, color: Colors.white, size: 30),
-              onPressed: () => Navigator.pop(context),
+            child: SafeArea(
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 24),
+                onPressed: () => Navigator.pop(context),
+              ),
             ),
           ),
         ],
