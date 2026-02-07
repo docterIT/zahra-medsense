@@ -289,7 +289,7 @@ class DashboardScreen extends StatelessWidget {
   Widget _buildBottomNav() {
     return Container(
       height: 90,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: ZahraColors.deepSpace,
         border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
       ),
