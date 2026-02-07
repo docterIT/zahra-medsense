@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Vertex AI API Key provided by user
-const API_KEY = "AQ.Ab8RN6LpETFImCgoDjLaRnBuZVdB_pwwgIoA6JxmGKOHouhKBQ";
+const API_KEY = "AQ.Ab8RN6KjOmfX_YEIGjfVxjNPYec6IptuTgNCEbljqWEdhfQUBA";
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 export async function analyzeParkinson(videoPath: string) {
