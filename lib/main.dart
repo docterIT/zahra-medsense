@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'components/theme.dart';
-import 'screens/dashboard_screen.dart';
+import 'screens/language_selection_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +23,7 @@ class ZahraMedSenseApp extends StatelessWidget {
       title: 'Zahra MedSense',
       debugShowCheckedModeBanner: false,
       theme: ZahraTheme.darkTheme,
-      home: const DashboardScreen(locale: 'id'),
+      home: const LanguageSelectionScreen(),
     );
   }
 }
