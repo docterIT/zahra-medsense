@@ -55,5 +55,5 @@ firebase-debug.*.log
 firestore-debug.log
 
 # Secret keys (Good practice)
-.env
-.env.*
+**/.env
+**/.env.*
